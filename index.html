@@ -1,0 +1,836 @@
+<!doctype html>
+<html lang="ms" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+
+<script>
+window.elementSdk = {
+  init: () => {},
+  setConfig: () => {}
+};
+
+window.dataSdk = {
+  init: () => {},
+  create: async () => ({ isOk: true })
+};
+</script>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&amp;family=Fredoka+One&amp;display=swap" rel="stylesheet">
+  <style>
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; padding: 0; }
+body { font-family: 'Nunito', sans-serif; }
+
+.card-hover { transition: all 0.2s ease; }
+.card-hover:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
+
+.pulse-correct {
+  animation: pulseGreen 0.5s ease;
+}
+@keyframes pulseGreen {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(34,197,94,0.5); }
+  100% { transform: scale(1); }
+}
+
+.shake-wrong {
+  animation: shakeRed 0.5s ease;
+}
+@keyframes shakeRed {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+}
+
+.product-selected {
+  animation: glowGold 0.8s ease-in-out infinite;
+  box-shadow: 0 0 15px rgba(217,119,6,0.8);
+}
+@keyframes glowGold {
+  0%, 100% { background-color: #f59e0b !important; box-shadow: 0 0 15px rgba(217,119,6,0.8); }
+  50% { background-color: #fbbf24 !important; box-shadow: 0 0 25px rgba(217,119,6,1); }
+}
+
+.fade-in {
+  animation: fadeIn 0.4s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.product-img-container {
+  width: 80px; height: 80px;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  background: #f1f5f9;
+  margin: 0 auto;
+}
+.product-img-container img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+
+/* Audio synthesis */
+.audio-context-ready { display: none; }
+
+.selected-product {
+  ring: 3px;
+  box-shadow: 0 0 0 3px #3b82f6;
+}
+
+.drop-zone {
+  min-height: 90px;
+  border: 2px dashed #94a3b8;
+  border-radius: 12px;
+  transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.drop-zone.active {
+  border-color: #3b82f6;
+  background: rgba(59,130,246,0.05);
+}
+.drop-zone.filled {
+  border-style: solid;
+  border-color: #3b82f6;
+  background: rgba(59,130,246,0.08);
+}
+.drop-zone.correct-zone {
+  border-color: #22c55e;
+  background: rgba(34,197,94,0.1);
+}
+.drop-zone.wrong-zone {
+  border-color: #ef4444;
+  background: rgba(239,68,68,0.1);
+}
+
+.btn-check {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  padding: 10px 28px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-check:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(37,99,235,0.3); }
+.btn-check:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.leaderboard-row {
+  animation: slideIn 0.3s ease forwards;
+  opacity: 0;
+}
+@keyframes slideIn {
+  to { opacity: 1; transform: translateX(0); }
+  from { opacity: 0; transform: translateX(-15px); }
+}
+
+.timer-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+.timer-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 1s linear;
+}
+
+.color-blue { background: #dbeafe; border-color: #3b82f6; color: #0c4a8f; }
+.color-green { background: #dcfce7; border-color: #22c55e; color: #0f6b2d; }
+.color-purple { background: #f3e8ff; border-color: #a855f7; color: #5b1f8e; }
+.color-orange { background: #ffedd5; border-color: #f97316; color: #7c2505; }
+
+.toast-msg {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+  padding: 10px 24px; border-radius: 12px; font-weight: 700;
+  z-index: 100; animation: toastIn 0.3s ease, toastOut 0.3s ease 1.5s forwards;
+}
+@keyframes toastIn { from { opacity:0; top:0; } to { opacity:1; top:20px; } }
+@keyframes toastOut { to { opacity:0; top:0; } }
+</style>
+  <style>body { box-sizing: border-box; }</style>
+ </head>
+ <body class="h-full" style="background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);">
+  <div id="app" class="h-full w-full overflow-auto">
+   <!-- SCREEN: Start -->
+   <div id="screen-start" class="flex flex-col items-center justify-center h-full p-6 fade-in">
+    <div class="text-center max-w-md w-full">
+     <div class="text-6xl mb-4">
+      🔧
+     </div>
+     <h1 id="title-display" class="text-3xl font-extrabold text-slate-800 mb-2" style="font-family:'Fredoka One',cursive;">Cabaran Padanan Fungsi</h1>
+     <p class="text-slate-500 mb-1 text-sm">RBT Tingkatan 2 • Bab 2</p>
+     <p class="text-slate-400 text-xs mb-6">Padankan produk dengan fungsi dan objek yang betul!</p>
+     <div class="bg-white rounded-2xl p-5 shadow-sm mb-6 text-left space-y-2">
+      <p class="font-bold text-slate-700 text-sm">📋 Cara Bermain:</p>
+      <p class="text-xs text-slate-500">1. Pilih produk, kemudian padankan dengan fungsi &amp; objek</p>
+      <p class="text-xs text-slate-500">2. Klik <b>Semak Jawapan</b> apabila selesai</p>
+      <p class="text-xs text-slate-500">3. Anda mempunyai <b>3 nyawa</b> sahaja ❤️</p>
+      <p class="text-xs text-slate-500">4. Lengkapkan <b>5 pusingan</b> dengan skor tertinggi!</p>
+     </div>
+     <div class="mb-5">
+      <label for="player-name" class="block text-sm font-bold text-slate-600 mb-1">Nama Pemain</label> <input id="player-name" type="text" placeholder="Masukkan nama anda" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-400 focus:outline-none text-center font-semibold text-slate-700">
+     </div><button id="btn-start" class="btn-check w-full py-3 text-lg" disabled>Mula Bermain!</button>
+    </div>
+   </div><!-- SCREEN: Game -->
+   <div id="screen-game" class="hidden flex flex-col h-full p-4 fade-in">
+    <!-- HUD -->
+    <div class="flex items-center justify-between mb-2">
+     <div class="flex items-center gap-2">
+      <span id="round-label" class="text-xs font-bold text-slate-500 bg-white px-3 py-1 rounded-full shadow-sm">Pusingan 1/5</span> <span id="score-label" class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">⭐ 0</span>
+     </div>
+     <div id="lives-display" class="flex gap-1"></div>
+    </div>
+    <p id="timer-text" class="text-xl font-extrabold text-red-600 text-right mb-3">0s</p><!-- Game Area -->
+    <div id="game-area" class="flex-1 overflow-auto"></div><!-- Bottom -->
+    <div class="flex items-center justify-between mt-3 pt-3 border-t border-slate-200">
+     <p id="feedback-text" class="text-sm font-bold text-slate-400">&nbsp;</p><button id="btn-check" class="btn-check" disabled>Semak Jawapan</button>
+    </div>
+   </div><!-- SCREEN: Round Result -->
+   <div id="screen-round-result" class="hidden flex flex-col items-center justify-center h-full p-6 fade-in">
+    <div class="text-center max-w-sm w-full bg-white rounded-2xl p-6 shadow-lg">
+     <div id="result-icon" class="text-5xl mb-3"></div>
+     <h2 id="result-title" class="text-2xl font-extrabold text-slate-800 mb-1"></h2>
+     <p id="result-desc" class="text-slate-500 text-sm mb-4"></p>
+     <div id="result-stats" class="grid grid-cols-2 gap-3 mb-5"></div><button id="btn-next-round" class="btn-check w-full py-3">Pusingan Seterusnya</button>
+    </div>
+   </div><!-- SCREEN: Game Over -->
+   <div id="screen-gameover" class="hidden flex flex-col items-center justify-center h-full p-6 fade-in">
+    <div class="text-center max-w-sm w-full">
+     <div class="text-6xl mb-3" id="gameover-icon">
+      🏆
+     </div>
+     <h2 id="gameover-title" class="text-2xl font-extrabold text-slate-800 mb-1"></h2>
+     <p id="gameover-desc" class="text-slate-500 text-sm mb-5"></p>
+     <div id="gameover-stats" class="bg-white rounded-2xl p-4 shadow-sm mb-5"></div><!-- Leaderboard -->
+     <div class="bg-white rounded-2xl p-4 shadow-sm mb-5 text-left">
+      <p class="font-bold text-slate-700 text-sm mb-3">🏅 Papan Pendahulu</p>
+      <div id="leaderboard-list" class="space-y-2"></div>
+      <p id="leaderboard-empty" class="text-xs text-slate-400 text-center hidden">Tiada rekod lagi</p>
+     </div><button id="btn-restart" class="btn-check w-full py-3">Main Semula</button>
+    </div>
+   </div>
+  </div>
+  <script>
+// ===== AUDIO SYNTHESIS =====
+let audioContext = null;
+
+function getAudioContext() {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return audioContext;
+}
+
+function playTone(frequency, duration, type = 'sine') {
+  try {
+    const ctx = getAudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.type = type;
+    osc.frequency.value = frequency;
+    
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+    
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration);
+  } catch (e) {
+    console.log('Audio play failed:', e);
+  }
+}
+
+function playSelectSound() {
+  playTone(800, 0.1);
+}
+
+function playCorrectSound() {
+  playTone(523, 0.1);
+  setTimeout(() => playTone(659, 0.1), 100);
+  setTimeout(() => playTone(784, 0.15), 200);
+}
+
+function playWrongSound() {
+  playTone(300, 0.15);
+  setTimeout(() => playTone(250, 0.2), 150);
+}
+
+function playCheckSound() {
+  playTone(440, 0.08);
+  setTimeout(() => playTone(494, 0.08), 80);
+  setTimeout(() => playTone(523, 0.1), 160);
+}
+
+function playCompletionSound() {
+  playTone(523, 0.1);
+  setTimeout(() => playTone(659, 0.1), 120);
+  setTimeout(() => playTone(784, 0.1), 240);
+  setTimeout(() => playTone(1047, 0.2), 360);
+}
+
+// ===== GAME DATA =====
+const ROUNDS = [
+  {
+    title: "Pusingan 1: Alat Pengikat & Pemotong",
+    items: [
+      { product: "Paku", fungsi: "Mengikat & menyambung", objek: "Kayu", icon: "🔨" },
+      { product: "Gam", fungsi: "Melekatkan bahan", objek: "Kertas & plastik", icon: "🧴" },
+      { product: "Klip Kertas", fungsi: "Memegang & menjepit", objek: "Kertas", icon: "📎" },
+      { product: "Gunting", fungsi: "Memotong bahan nipis", objek: "Kertas & kain", icon: "✂️" }
+    ]
+  },
+  {
+    title: "Pusingan 2: Alat Pengukuran",
+    items: [
+      { product: "Pembaris", fungsi: "Mengukur panjang", objek: "Garisan lurus", icon: "📏" },
+      { product: "Jam Randik", fungsi: "Mengukur masa", objek: "Aktiviti berjangka", icon: "⏱️" },
+      { product: "Termometer", fungsi: "Mengukur suhu", objek: "Cecair & badan", icon: "🌡️" },
+      { product: "Penimbang Berat", fungsi: "Mengukur jisim", objek: "Objek berjisim", icon: "⚖️" }
+    ]
+  },
+  {
+    title: "Pusingan 3: Alat Bengkel",
+    items: [
+      { product: "Tukul", fungsi: "Mengetuk & memaku", objek: "Paku & logam", icon: "🔨" },
+      { product: "Gergaji", fungsi: "Memotong bahan keras", objek: "Kayu & logam", icon: "🪵" },
+      { product: "Kikir", fungsi: "Melicinkan permukaan", objek: "Logam & kayu", icon: "📋" },
+      { product: "Sesiku L", fungsi: "Mengukur sudut tepat", objek: "Sudut 90 darjah", icon: "📐" }
+    ]
+  },
+  {
+    title: "Pusingan 4: Komponen Elektrik",
+    items: [
+      { product: "Bateri", fungsi: "Membekalkan tenaga", objek: "Litar elektrik", icon: "🔋" },
+      { product: "LED", fungsi: "Memancarkan cahaya", objek: "Penunjuk & lampu", icon: "💡" },
+      { product: "Suis", fungsi: "Menghidup & mematikan", objek: "Aliran arus", icon: "🔌" },
+      { product: "Perintang", fungsi: "Mengawal arus elektrik", objek: "Komponen litar", icon: "⚡" }
+    ]
+  },
+  {
+    title: "Pusingan 5: Alat Jahitan",
+    items: [
+      { product: "Jarum", fungsi: "Mencucuk & menjahit", objek: "Kain & benang", icon: "🧵" },
+      { product: "Gunting Kain", fungsi: "Memotong fabrik", objek: "Kain & tekstil", icon: "✂️" },
+      { product: "Pita Ukur", fungsi: "Mengukur lengkungan", objek: "Badan & kain", icon: "📏" },
+      { product: "Pembentuk Jahitan", fungsi: "Membuka jahitan silap", objek: "Jahitan salah", icon: "🔧" }
+    ]
+  }
+];
+
+const COLORS = ['color-blue', 'color-green', 'color-purple', 'color-orange'];
+
+// ===== STATE =====
+let state = {
+  screen: 'start',
+  playerName: '',
+  round: 0,
+  score: 0,
+  lives: 3,
+  totalTimer: 0,
+  roundTimer: 0,
+  timerInterval: null,
+  matches: {},     // productIndex -> { fungsi: idx|null, objek: idx|null }
+  selectedProduct: null,
+  selectedColumn: null,
+  shuffledFungsi: [],
+  shuffledObjek: [],
+  leaderboard: []
+};
+
+// ===== ELEMENTS =====
+const $ = id => document.getElementById(id);
+
+// ===== CONFIG =====
+const defaultConfig = {
+  game_title: 'Cabaran Padanan Fungsi',
+  background_color: '#f8fafc',
+  surface_color: '#ffffff',
+  text_color: '#1e293b',
+  primary_color: '#3b82f6',
+  accent_color: '#f97316'
+};
+
+// ===== ELEMENT SDK =====
+window.elementSdk.init({
+  defaultConfig,
+  onConfigChange: async (config) => {
+    const title = config.game_title || defaultConfig.game_title;
+    const bg = config.background_color || defaultConfig.background_color;
+    const surface = config.surface_color || defaultConfig.surface_color;
+    const text = config.text_color || defaultConfig.text_color;
+    const primary = config.primary_color || defaultConfig.primary_color;
+    const accent = config.accent_color || defaultConfig.accent_color;
+
+    const el = $('title-display');
+    if (el) el.textContent = title;
+
+    document.body.style.backgroundColor = bg;
+    document.querySelectorAll('.bg-white, .rounded-2xl').forEach(e => {
+      if (e.classList.contains('bg-white')) e.style.backgroundColor = surface;
+    });
+    document.querySelectorAll('h1,h2,.font-extrabold').forEach(e => e.style.color = text);
+    document.querySelectorAll('.btn-check').forEach(e => {
+      e.style.background = `linear-gradient(135deg, ${primary}, ${primary}dd)`;
+    });
+    document.querySelectorAll('.timer-fill').forEach(e => e.style.backgroundColor = primary);
+  },
+  mapToCapabilities: (config) => ({
+    recolorables: [
+      { get: () => config.background_color || defaultConfig.background_color, set: v => { config.background_color = v; window.elementSdk.setConfig({ background_color: v }); } },
+      { get: () => config.surface_color || defaultConfig.surface_color, set: v => { config.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); } },
+      { get: () => config.text_color || defaultConfig.text_color, set: v => { config.text_color = v; window.elementSdk.setConfig({ text_color: v }); } },
+      { get: () => config.primary_color || defaultConfig.primary_color, set: v => { config.primary_color = v; window.elementSdk.setConfig({ primary_color: v }); } },
+      { get: () => config.accent_color || defaultConfig.accent_color, set: v => { config.accent_color = v; window.elementSdk.setConfig({ accent_color: v }); } }
+    ],
+    borderables: [],
+    fontEditable: undefined,
+    fontSizeable: undefined
+  }),
+  mapToEditPanelValues: (config) => new Map([
+    ["game_title", config.game_title || defaultConfig.game_title]
+  ])
+});
+
+// ===== DATA SDK =====
+const dataHandler = {
+  onDataChanged(data) {
+    state.leaderboard = data.sort((a, b) => b.score - a.score || a.time_taken - b.time_taken).slice(0, 10);
+    renderLeaderboard();
+  }
+};
+window.dataSdk.init(dataHandler);
+
+// ===== HELPERS =====
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function showScreen(name) {
+  ['screen-start','screen-game','screen-round-result','screen-gameover'].forEach(s => {
+    const el = $(s);
+    if (s === 'screen-' + name) { el.classList.remove('hidden'); el.classList.add('fade-in'); }
+    else el.classList.add('hidden');
+  });
+  state.screen = name;
+}
+
+function showToast(msg, type) {
+  const existing = document.querySelector('.toast-msg');
+  if (existing) existing.remove();
+  const t = document.createElement('div');
+  t.className = `toast-msg ${type === 'success' ? 'bg-green-500 text-white' : type === 'error' ? 'bg-red-500 text-white' : 'bg-blue-500 text-white'}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2000);
+}
+
+// ===== LIVES =====
+function renderLives() {
+  const c = $('lives-display');
+  c.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    const span = document.createElement('span');
+    span.textContent = i < state.lives ? '❤️' : '🖤';
+    span.className = 'text-lg';
+    c.appendChild(span);
+  }
+}
+
+// ===== TIMER =====
+function startTimer() {
+  state.roundTimer = 0;
+  clearInterval(state.timerInterval);
+  state.timerInterval = setInterval(() => {
+    state.roundTimer++;
+    state.totalTimer++;
+    $('timer-text').textContent = `${state.roundTimer}s`;
+  }, 1000);
+}
+function stopTimer() { clearInterval(state.timerInterval); }
+
+function formatTime(seconds) {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+}
+
+// ===== RENDER GAME =====
+function startRound() {
+  const round = ROUNDS[state.round];
+  const items = round.items;
+
+  state.matches = {};
+  items.forEach((_, i) => { state.matches[i] = { fungsi: null, objek: null }; });
+  state.selectedProduct = null;
+  state.selectedColumn = null;
+
+  // Shuffle fungsi and objek
+  state.shuffledFungsi = shuffle(items.map((it, i) => ({ text: it.fungsi, origIdx: i })));
+  state.shuffledObjek = shuffle(items.map((it, i) => ({ text: it.objek, origIdx: i })));
+
+  $('round-label').textContent = `Pusingan ${state.round + 1}/5`;
+  $('score-label').textContent = `⭐ ${state.score}`;
+  $('feedback-text').innerHTML = '&nbsp;';
+  $('btn-check').disabled = true;
+
+  renderLives();
+  startTimer();
+  renderGameArea();
+  showScreen('game');
+}
+
+function renderGameArea() {
+  const round = ROUNDS[state.round];
+  const items = round.items;
+  const area = $('game-area');
+
+  area.innerHTML = `
+    <p class="text-lg font-extrabold text-slate-800 mb-4 text-center uppercase">${round.title}</p>
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse" style="min-width:500px;">
+        <thead>
+          <tr>
+            <th class="text-xs font-bold text-blue-600 pb-2 text-center" style="width:25%">PRODUK</th>
+            <th class="text-xs font-bold text-green-600 pb-2 text-center" style="width:25%">FUNGSI</th>
+            <th class="text-xs font-bold text-purple-600 pb-2 text-center" style="width:25%">OBJEK</th>
+          </tr>
+        </thead>
+        <tbody id="match-table-body"></tbody>
+      </table>
+    </div>
+    <div class="mt-4">
+      <p class="text-xs font-semibold text-slate-400 mb-2">Pilihan Fungsi:</p>
+      <div id="fungsi-choices" class="flex flex-wrap gap-2 mb-3"></div>
+      <p class="text-xs font-semibold text-slate-400 mb-2">Pilihan Objek:</p>
+      <div id="objek-choices" class="flex flex-wrap gap-2"></div>
+    </div>
+  `;
+
+  renderTable();
+  renderChoices();
+}
+
+function renderTable() {
+  const items = ROUNDS[state.round].items;
+  const tbody = document.getElementById('match-table-body');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  items.forEach((item, i) => {
+    const colorClass = COLORS[i % COLORS.length];
+    const fMatch = state.matches[i].fungsi;
+    const oMatch = state.matches[i].objek;
+    const fText = fMatch !== null ? state.shuffledFungsi[fMatch].text : '';
+    const oText = oMatch !== null ? state.shuffledObjek[oMatch].text : '';
+    
+    const colorMap = { 'color-blue': '#3b82f6', 'color-green': '#22c55e', 'color-purple': '#a855f7', 'color-orange': '#f97316' };
+    const productColor = colorMap[colorClass];
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="py-2 px-1 text-center align-top">
+        <div class="product-card cursor-pointer rounded-xl p-2 border-2 transition-all ${state.selectedProduct === i ? 'product-selected border-amber-600' : 'border-gray-300 shadow-sm'}" style="${state.selectedProduct === i ? 'background-color: #f59e0b;' : 'background-color: #3b82f6;'}" data-product="${i}">
+          <p class="text-xs font-bold" style="color: #ffffff; text-transform: uppercase;">${item.product.toUpperCase()}</p>
+        </div>
+      </td>
+      <td class="py-2 px-1 text-center align-top">
+        <div class="drop-zone ${fText ? 'filled' : ''} bg-green-50 border-green-300" data-product="${i}" data-col="fungsi">
+          ${fText ? `<span class="text-sm font-semibold px-2 py-1 rounded-lg bg-red-200 text-red-800 border border-red-400">${fText} <span class="remove-match cursor-pointer ml-1" data-product="${i}" data-col="fungsi">✕</span></span>` : '<span class="text-xs text-green-600 font-semibold">pilih fungsi</span>'}
+        </div>
+      </td>
+      <td class="py-2 px-1 text-center align-top">
+        <div class="drop-zone ${oText ? 'filled' : ''} bg-purple-50 border-purple-300" data-product="${i}" data-col="objek">
+          ${oText ? `<span class="text-sm font-semibold px-2 py-1 rounded-lg bg-red-200 text-red-800 border border-red-400">${oText} <span class="remove-match cursor-pointer ml-1" data-product="${i}" data-col="objek">✕</span></span>` : '<span class="text-xs text-purple-600 font-semibold">pilih objek</span>'}
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Check if all filled
+  const allFilled = Object.values(state.matches).every(m => m.fungsi !== null && m.objek !== null);
+  $('btn-check').disabled = !allFilled;
+}
+
+function renderChoices() {
+  const fc = document.getElementById('fungsi-choices');
+  const oc = document.getElementById('objek-choices');
+  if (!fc || !oc) return;
+
+  // Find used indices
+  const usedFungsi = new Set(Object.values(state.matches).map(m => m.fungsi).filter(v => v !== null));
+  const usedObjek = new Set(Object.values(state.matches).map(m => m.objek).filter(v => v !== null));
+
+  fc.innerHTML = '';
+  state.shuffledFungsi.forEach((f, idx) => {
+    if (usedFungsi.has(idx)) return;
+    const btn = document.createElement('button');
+    btn.className = 'text-xs font-semibold px-3 py-2 rounded-lg border-2 card-hover color-green cursor-pointer';
+    btn.textContent = f.text;
+    btn.dataset.fungsiIdx = idx;
+    btn.addEventListener('click', () => handleChoiceClick('fungsi', idx));
+    fc.appendChild(btn);
+  });
+
+  oc.innerHTML = '';
+  state.shuffledObjek.forEach((o, idx) => {
+    if (usedObjek.has(idx)) return;
+    const btn = document.createElement('button');
+    btn.className = 'text-xs font-semibold px-3 py-2 rounded-lg border-2 card-hover color-purple cursor-pointer';
+    btn.textContent = o.text;
+    btn.dataset.objekIdx = idx;
+    btn.addEventListener('click', () => handleChoiceClick('objek', idx));
+    oc.appendChild(btn);
+  });
+}
+
+// ===== INTERACTION =====
+function handleProductClick(productIdx) {
+  state.selectedProduct = state.selectedProduct === productIdx ? null : productIdx;
+  playSelectSound();
+  renderTable();
+  renderChoices();
+}
+
+function handleChoiceClick(col, choiceIdx) {
+  if (state.selectedProduct === null) {
+    showToast('Sila pilih produk dahulu!', 'info');
+    return;
+  }
+  state.matches[state.selectedProduct][col] = choiceIdx;
+  playSelectSound();
+  renderTable();
+  renderChoices();
+}
+
+function handleRemoveMatch(productIdx, col) {
+  state.matches[productIdx][col] = null;
+  renderTable();
+  renderChoices();
+}
+
+// Delegated events
+document.addEventListener('click', (e) => {
+  const productCard = e.target.closest('[data-product]');
+  const removeBtn = e.target.closest('.remove-match');
+
+  if (removeBtn) {
+    e.stopPropagation();
+    handleRemoveMatch(parseInt(removeBtn.dataset.product), removeBtn.dataset.col);
+    return;
+  }
+
+  if (productCard && productCard.classList.contains('product-card')) {
+    handleProductClick(parseInt(productCard.dataset.product));
+    return;
+  }
+
+  // Drop zone click to assign
+  const dropZone = e.target.closest('.drop-zone');
+  if (dropZone && state.selectedProduct !== null) {
+    // Hint
+    const col = dropZone.dataset.col;
+    const targetProduct = parseInt(dropZone.dataset.product);
+    if (targetProduct === state.selectedProduct) {
+      showToast(`Pilih ${col === 'fungsi' ? 'fungsi' : 'objek'} dari senarai di bawah`, 'info');
+    }
+  }
+});
+
+// ===== CHECK ANSWERS =====
+function checkAnswers() {
+  const items = ROUNDS[state.round].items;
+  let correct = 0;
+  const rows = document.querySelectorAll('#match-table-body tr');
+
+  items.forEach((item, i) => {
+    const fIdx = state.matches[i].fungsi;
+    const oIdx = state.matches[i].objek;
+    const fCorrect = fIdx !== null && state.shuffledFungsi[fIdx].origIdx === i;
+    const oCorrect = oIdx !== null && state.shuffledObjek[oIdx].origIdx === i;
+
+    const zones = rows[i] ? rows[i].querySelectorAll('.drop-zone') : [];
+    if (zones[0]) zones[0].classList.add(fCorrect ? 'correct-zone' : 'wrong-zone');
+    if (zones[1]) zones[1].classList.add(oCorrect ? 'correct-zone' : 'wrong-zone');
+
+    if (fCorrect && oCorrect) correct++;
+  });
+
+  playCheckSound();
+
+  const total = items.length;
+  const roundScore = correct * 10;
+  const timeBonus = Math.max(0, 30 - state.roundTimer);
+  const totalRoundScore = roundScore + timeBonus;
+  state.score += totalRoundScore;
+
+  stopTimer();
+
+  if (correct < total) {
+    state.lives--;
+    renderLives();
+    setTimeout(() => playWrongSound(), 500);
+  } else {
+    setTimeout(() => playCorrectSound(), 500);
+  }
+
+  setTimeout(() => showRoundResult(correct, total, totalRoundScore, timeBonus), 1200);
+}
+
+function showRoundResult(correct, total, roundScore, timeBonus) {
+  const perfect = correct === total;
+  $('result-icon').textContent = perfect ? '🎉' : correct > 0 ? '👍' : '😢';
+  $('result-title').textContent = perfect ? 'Sempurna!' : correct > 0 ? 'Bagus!' : 'Cuba lagi!';
+  $('result-desc').textContent = `${correct}/${total} padanan betul`;
+
+  $('result-stats').innerHTML = `
+    <div class="bg-blue-50 rounded-xl p-3 text-center">
+      <p class="text-lg font-extrabold text-blue-600">${roundScore}</p>
+      <p class="text-xs text-slate-500">Skor Pusingan</p>
+    </div>
+    <div class="bg-amber-50 rounded-xl p-3 text-center">
+      <p class="text-lg font-extrabold text-amber-600">+${timeBonus}</p>
+      <p class="text-xs text-slate-500">Bonus Masa</p>
+    </div>
+    <div class="bg-green-50 rounded-xl p-3 text-center">
+      <p class="text-lg font-extrabold text-green-600">⭐ ${state.score}</p>
+      <p class="text-xs text-slate-500">Jumlah Skor</p>
+    </div>
+    <div class="bg-red-50 rounded-xl p-3 text-center">
+      <p class="text-lg font-extrabold text-red-600">${'❤️'.repeat(state.lives)}${'🖤'.repeat(3 - state.lives)}</p>
+      <p class="text-xs text-slate-500">Nyawa</p>
+    </div>
+  `;
+
+  const isLast = state.round >= 4 || state.lives <= 0;
+  $('btn-next-round').textContent = isLast ? 'Lihat Keputusan' : 'Pusingan Seterusnya';
+
+  showScreen('round-result');
+}
+
+// ===== GAME OVER =====
+async function showGameOver() {
+  const dead = state.lives <= 0;
+  $('gameover-icon').textContent = dead ? '💔' : '🏆';
+  $('gameover-title').textContent = dead ? 'Permainan Tamat!' : 'Tahniah!';
+  $('gameover-desc').textContent = dead ? 'Nyawa anda telah habis.' : 'Anda telah melengkapkan semua pusingan!';
+
+  $('gameover-stats').innerHTML = `
+    <div class="grid grid-cols-3 gap-3 text-center">
+      <div><p class="text-2xl font-extrabold text-blue-600">${state.score}</p><p class="text-xs text-slate-500">Jumlah Skor</p></div>
+      <div><p class="text-2xl font-extrabold text-green-600">${state.round + 1}</p><p class="text-xs text-slate-500">Pusingan</p></div>
+      <div><p class="text-2xl font-extrabold text-amber-600">${formatTime(state.totalTimer)}</p><p class="text-xs text-slate-500">Jumlah Masa</p></div>
+    </div>
+  `;
+
+  // Save score
+  if (state.leaderboard.length < 999) {
+    const result = await window.dataSdk.create({
+      name: state.playerName,
+      score: state.score,
+      time_taken: state.totalTimer,
+      created_at: new Date().toISOString()
+    });
+    if (!result.isOk) {
+      console.error('Failed to save score');
+    }
+  }
+
+  showScreen('gameover');
+}
+
+// ===== LEADERBOARD =====
+function renderLeaderboard() {
+  const list = $('leaderboard-list');
+  const empty = $('leaderboard-empty');
+  if (!list) return;
+
+  if (state.leaderboard.length === 0) {
+    list.innerHTML = '';
+    if (empty) empty.classList.remove('hidden');
+    return;
+  }
+  if (empty) empty.classList.add('hidden');
+
+  const medals = ['🥇', '🥈', '🥉'];
+  list.innerHTML = '';
+  state.leaderboard.slice(0, 10).forEach((entry, i) => {
+    const row = document.createElement('div');
+    row.className = 'leaderboard-row flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2';
+    row.style.animationDelay = `${i * 0.05}s`;
+    row.innerHTML = `
+      <div class="flex items-center gap-2">
+        <span class="text-sm">${medals[i] || (i + 1) + '.'}</span>
+        <span class="text-sm font-bold text-slate-700">${entry.name || 'Tanpa Nama'}</span>
+      </div>
+      <div class="flex gap-4 text-xs">
+        <span class="text-slate-500">${formatTime(entry.time_taken)}</span>
+        <span class="font-extrabold text-blue-600">⭐ ${entry.score}</span>
+      </div>
+    `;
+    list.appendChild(row);
+  });
+}
+
+// ===== EVENT LISTENERS =====
+$('player-name').addEventListener('input', (e) => {
+  state.playerName = e.target.value.trim();
+  $('btn-start').disabled = !state.playerName;
+});
+
+$('btn-start').addEventListener('click', (e) => {
+  e.preventDefault();
+  if (!state.playerName) return;
+  playSelectSound();
+  state.round = 0;
+  state.score = 0;
+  state.lives = 3;
+  startRound();
+});
+
+$('btn-check').addEventListener('click', (e) => {
+  e.preventDefault();
+  checkAnswers();
+});
+
+$('btn-next-round').addEventListener('click', (e) => {
+  e.preventDefault();
+  playCompletionSound();
+  if (state.lives <= 0 || state.round >= 4) {
+    showGameOver();
+  } else {
+    state.round++;
+    startRound();
+  }
+});
+
+$('btn-restart').addEventListener('click', (e) => {
+  e.preventDefault();
+  showScreen('start');
+  $('player-name').value = '';
+  $('btn-start').disabled = true;
+  state.playerName = '';
+  state.totalTimer = 0;
+});
+
+lucide.createIcons();
+</script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ec1d0bb52b70b29',t:'MTc3NjE2MDMyMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
